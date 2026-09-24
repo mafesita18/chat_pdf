@@ -3,10 +3,11 @@ import platform
 import streamlit as st
 from PIL import Image
 from PyPDF2 import PdfReader
-from langchain.text_splitter import CharacterTextSplitter
-from langchain_community.embeddings import OpenAIEmbeddings
+
+# Importaciones actualizadas para compatibilidad con las librerías recientes
+from langchain_text_splitters import CharacterTextSplitter
+from langchain_openai import OpenAIEmbeddings, OpenAI
 from langchain_community.vectorstores import FAISS
-from langchain_community.llms import OpenAI
 from langchain.chains.question_answering import load_qa_chain
 
 # App title and presentation
@@ -41,7 +42,9 @@ if pdf is not None and ke:
         pdf_reader = PdfReader(pdf)
         text = ""
         for page in pdf_reader.pages:
-            text += page.extract_text()
+            extracted = page.extract_text()
+            if extracted:
+                text += extracted
         
         st.info(f"Texto extraído: {len(text)} caracteres")
         
@@ -74,11 +77,14 @@ if pdf is not None and ke:
             chain = load_qa_chain(llm, chain_type="stuff")
             
             # Run the chain
-            response = chain.run(input_documents=docs, question=user_question)
+            response = chain.invoke({"input_documents": docs, "question": user_question})
             
             # Display the response
             st.markdown("### Respuesta:")
-            st.markdown(response)
+            if isinstance(response, dict) and "output_text" in response:
+                st.markdown(response["output_text"])
+            else:
+                st.markdown(response)
                 
     except Exception as e:
         st.error(f"Error al procesar el PDF: {str(e)}")
