@@ -1,13 +1,13 @@
 import os
+import platform
 import streamlit as st
 from PIL import Image
 from PyPDF2 import PdfReader
 from langchain.text_splitter import CharacterTextSplitter
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores import FAISS
-from langchain.llms import OpenAI
+from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_community.llms import OpenAI
 from langchain.chains.question_answering import load_qa_chain
-import platform
 
 # App title and presentation
 st.title('Generación Aumentada por Recuperación (RAG) 💬')
@@ -67,9 +67,8 @@ if pdf is not None and ke:
         if user_question:
             docs = knowledge_base.similarity_search(user_question)
             
-            # Use a current model instead of deprecated text-davinci-003
-            # Options: "gpt-3.5-turbo-instruct" or "gpt-4o" depending on your API access
-            llm = OpenAI(temperature=0, model_name="gpt-4o-mini-2024-07-18")
+            # Model selection
+            llm = OpenAI(temperature=0, model_name="gpt-3.5-turbo-instruct")
             
             # Load QA chain
             chain = load_qa_chain(llm, chain_type="stuff")
@@ -83,14 +82,10 @@ if pdf is not None and ke:
                 
     except Exception as e:
         st.error(f"Error al procesar el PDF: {str(e)}")
-        # Add detailed error for debugging
         import traceback
         st.error(traceback.format_exc())
+
 elif pdf is not None and not ke:
-    st.warning("Por favor ingresa tu clave de API de OpenAI para continuar")
+    st.warning("Por favor ingresa tu clave de API de OpenAI para procesar el PDF.")
 else:
-    st.info("Por favor carga un archivo PDF para comenzar")
-elif pdf is not None and not ke:
-    st.warning("⚠️ Debes ingresar tu Clave de API de OpenAI en la barra lateral para continuar.")
-else:
-    st.info("👋 Para comenzar, carga un archivo PDF de mercadeo desde el panel superior.")
+    st.info("Por favor carga un archivo PDF para comenzar.")
