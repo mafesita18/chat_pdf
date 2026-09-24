@@ -1,14 +1,13 @@
 import os
-import platform
 import streamlit as st
 from PIL import Image
 from PyPDF2 import PdfReader
-
-# Importaciones actualizadas para compatibilidad con las librerías recientes
-from langchain_text_splitters import CharacterTextSplitter
-from langchain_openai import OpenAIEmbeddings, OpenAI
-from langchain_community.vectorstores import FAISS
+from langchain.text_splitter import CharacterTextSplitter
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.vectorstores import FAISS
+from langchain.llms import OpenAI
 from langchain.chains.question_answering import load_qa_chain
+import platform
 
 # App title and presentation
 st.title('Generación Aumentada por Recuperación (RAG) 💬')
@@ -42,9 +41,7 @@ if pdf is not None and ke:
         pdf_reader = PdfReader(pdf)
         text = ""
         for page in pdf_reader.pages:
-            extracted = page.extract_text()
-            if extracted:
-                text += extracted
+            text += page.extract_text()
         
         st.info(f"Texto extraído: {len(text)} caracteres")
         
@@ -70,28 +67,26 @@ if pdf is not None and ke:
         if user_question:
             docs = knowledge_base.similarity_search(user_question)
             
-            # Model selection
-            llm = OpenAI(temperature=0, model_name="gpt-3.5-turbo-instruct")
+            # Use a current model instead of deprecated text-davinci-003
+            # Options: "gpt-3.5-turbo-instruct" or "gpt-4o" depending on your API access
+            llm = OpenAI(temperature=0, model_name="gpt-4o-mini-2024-07-18")
             
             # Load QA chain
             chain = load_qa_chain(llm, chain_type="stuff")
             
             # Run the chain
-            response = chain.invoke({"input_documents": docs, "question": user_question})
+            response = chain.run(input_documents=docs, question=user_question)
             
             # Display the response
             st.markdown("### Respuesta:")
-            if isinstance(response, dict) and "output_text" in response:
-                st.markdown(response["output_text"])
-            else:
-                st.markdown(response)
+            st.markdown(response)
                 
     except Exception as e:
         st.error(f"Error al procesar el PDF: {str(e)}")
+        # Add detailed error for debugging
         import traceback
         st.error(traceback.format_exc())
-
 elif pdf is not None and not ke:
-    st.warning("Por favor ingresa tu clave de API de OpenAI para procesar el PDF.")
+    st.warning("Por favor ingresa tu clave de API de OpenAI para continuar")
 else:
-    st.info("Por favor carga un archivo PDF para comenzar.")
+    st.info("Por favor carga un archivo PDF para comenzar")
